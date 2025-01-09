@@ -12,10 +12,12 @@ import (
 	"github.com/cnc-csku/task-nexus/task-management/domain/services"
 	grpcclient2 "github.com/cnc-csku/task-nexus/task-management/internal/adapters/repositories/grpcclient"
 	"github.com/cnc-csku/task-nexus/task-management/internal/adapters/repositories/mongo"
+	storage2 "github.com/cnc-csku/task-nexus/task-management/internal/adapters/repositories/storage"
 	"github.com/cnc-csku/task-nexus/task-management/internal/adapters/rest"
 	"github.com/cnc-csku/task-nexus/task-management/internal/infrastructure/api"
 	"github.com/cnc-csku/task-nexus/task-management/internal/infrastructure/database"
 	"github.com/cnc-csku/task-nexus/task-management/internal/infrastructure/router"
+	"github.com/cnc-csku/task-nexus/task-management/internal/infrastructure/storage"
 )
 
 // Injectors from wire.go:
@@ -25,10 +27,12 @@ func InitializeApp() *api.EchoAPI {
 	configConfig := config.NewConfig()
 	client := database.NewMongoClient(configConfig, context)
 	healthCheckHandler := rest.NewHealthCheckHandler()
+	minioClient := storage.NewMinIOClient(context, configConfig)
+	minioRepository := storage2.NewMinioRepository(minioClient, configConfig)
 	grpcClientConfig := config.ProvideGrpcClientConfig(configConfig)
 	grpcClient := grpcclient.NewGrpcClient(grpcClientConfig)
 	grpcclientGrpcClient := grpcclient2.NewGrpcClient(context, grpcClient)
-	commonService := services.NewCommonService(grpcclientGrpcClient)
+	commonService := services.NewCommonService(configConfig, minioRepository, grpcclientGrpcClient)
 	commonHandler := rest.NewCommonHandler(commonService)
 	memberRepository := mongo.NewMemberRepository(client)
 	memberService := services.NewMemberService(memberRepository, grpcclientGrpcClient)

@@ -1,8 +1,8 @@
 go 1.23
 
 use (
-	./task-management
-	./cronjob
 	./api-specification
+	./cronjob
 	./go-lib
+	./task-management
 )
